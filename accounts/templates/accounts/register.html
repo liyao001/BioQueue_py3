@@ -1,0 +1,50 @@
+{% extends "ui/single.html" %}
+{% block title %}Sign Up | BioQueue{% endblock %}
+{% block content %}
+    <div class="container-fluid" style="margin: 50px 0;">
+        <div class="row-fluid text-center">
+            <h1>Register</h1>
+            <div class="login-form">
+                <form id="login-form" class="text-left" novalidate="novalidate">
+                    <div class="Validform_checktip alert" style="display: none;"></div>
+                    <div class="main-login-form">
+                        <div class="login-group">
+                            {{ form.as_p }}
+                        </div>
+                        <input type="hidden" name="next" value="{{ next }}" />
+                        {% csrf_token %}
+                        <button type="submit" class="login-button"><i class="glyphicon glyphicon-chevron-right"></i></button>
+                    </div>
+                    <div class="etc-login-form">
+                        <p>already have an account? <a href="{% url 'accounts:login' %}">login here</a></p>
+                        <p>NOTE: After you submit the application form, please wait for the administrator to active your account.</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script %}
+$(document)
+    .ajaxStart(function(){
+        $("button:submit").attr("disabled", true);
+    })
+    .ajaxStop(function(){
+        $("button:submit").attr("disabled", false);
+    });
+    $("form").submit(function(){
+        var self = $(this);
+        self.find(".Validform_checktip").hide();
+        $.post(self.attr("action"), self.serialize(), success, "json");
+        return false;
+
+        function success(data){
+            if(data.status){
+                window.location.href = data.url;
+            } else {
+                $('form')[0].reset();
+                self.find(".Validform_checktip").html(data.info).show();
+            }
+        }
+    });
+{% endblock %}

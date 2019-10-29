@@ -1,0 +1,384 @@
+{% extends "ui/base.html" %}
+{% block title %}Job Status | BioQueue{% endblock %}
+{% block content %}
+    <div class="row-fluid">
+        <div class="page-header">
+            <h1 id="task">Job Status</h1>
+        </div>
+        <div class="disk-quota">
+            Disk Usage ({{ u_disk }} of {{ t_disk }}):
+            <div class="progress">
+                <div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="{{ disk_per }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ disk_per }}%">
+                    <span class="sr-only">{{ disk_per }}% Used</span>
+                </div>
+            </div>
+        </div>
+        <form class="form-inline" style="margin-bottom: 10px;">
+            <div class="form-group">
+                <label for="batch-action">Action:</label>
+                <select class="form-control" id="batch-action" name="batch-action">
+                    <option>---------</option>
+                    <option value="d">Delete</option>
+                    <option value="t">Terminate</option>
+                    <option value="r">Rerun</option>
+                </select>
+            </div>
+            <button type="button" id="click-all" data-checked="0" class="btn btn-default">Select All</button>
+            <button type="button" class="btn btn-default" onclick="batchOperation()">Go</button>
+        </form>
+        <div class="row job-container">
+            {% if job_list %}
+            {% for job in job_list %}
+            <div class="col-sm-6 col-md-4" id="job-panel-parent-{{ job.id }}">
+                <div class="thumbnail" id="job-panel-{{ job.id }}">
+                    <div class="caption job-panel">
+                        <div class="text-center status" id="job-status-icon-{{ job.id }}">{% if job.status == -1 %}
+                            <i class="icon-ok icon-3x"></i>
+                        {% elif job.status == -2 %}
+                            <i class="icon-pause icon-3x"></i>
+                        {% elif job.status == -3 %}
+                            <i class="icon-remove icon-3x"></i>
+                        {% elif job.status == 0 %}
+                            <i class="icon-time icon-3x"></i>
+                        {% else %}
+                            <i class="icon-play icon-3x"></i>
+                        {% endif %}</div>
+                        <h3 style="margin-top: 0;">{% if job.job_name %}{{ job.job_name }}{% else %}{{ job.protocol }}{% endif %}<input type="checkbox" class="batch_operation" style="float: right;" name="batch_operation" value="{{ job.id }}"></h3>
+                        <p><ul class="list-unstyled">
+                        <li><b>ID:</b> {{ job.id }}</li>
+                        <li><b>Status:</b> <span class="status-text" id="job-status-txt-{{ job.id }}">{% if job.status == -1 %}
+                            Finished
+                        {% elif job.status == -2 %}
+                            Awaiting for {% if job.wait_for == 0 %}Ok{% elif job.wait_for == 1%}Disk{% elif job.wait_for == 2%}Memory{% elif job.wait_for == 3%}CPU{% elif job.wait_for == 4%}Former{% elif job.wait_for == 5%}Peer{% elif job.wait_for == 5%}Virtual Memory{% endif %} (Step {{ job.resume|add:2 }})
+                        {% elif job.status == -3 %}
+                            <span style="display: inline-block;margin-right:5px;cursor:pointer;" class="label label-warning" onclick="showLog({{ job.id }});">Logs (Error when executing step {{ job.resume|add:2 }})</span>
+                        {% elif job.status == 0 %}
+                            Waiting (Step {{ job.resume|add:2 }})
+                        {% else %}
+                            Running (Step {{ job.status }})
+                        {% endif %}</span></li>
+                        <li><b>Input files:</b> <span style="word-wrap: break-word;">{{ job.input_file }}</span></li>
+                        <li><b>Protocol:</b> <span style="word-wrap: break-word;">{{ job.protocol }}</span></li>
+                        <li><b>Job parameters:</b> <span style="word-wrap: break-word;">{{ job.parameter }}</span></li>
+                        <li><b>Create time:</b> {{ job.create_time }}</li>
+                        <li><b>Last update:</b> {{ job.update_time }}</li>
+                        <li><span class="label label-info show-folder" onclick="showFolder({{ job.id }});" data-toggle="tooltip" data-placement="top" title="{{ job.result }}"><i class="icon-folder-open"></i> Show output files</span></li>
+                    </ul></p>
+                    </div>
+                    <hr style="margin-bottom: 5px; margin-top: 5px;">
+                    <div class="text-center operation-buttons">
+                        {% if job.status == -1 %}
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-danger" onclick="delJob(this);" data-toggle="tooltip" data-placement="top" title="Delete"><i class='icon-trash icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-info" onclick="reRunJob(this);" data-toggle="tooltip" data-placement="top" title="Rerun"><i class='icon-repeat icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-warning" onclick="auditJob(this);" data-toggle="tooltip" data-placement="top" title="Audit"><i class='icon-screenshot icon-white'></i></button>
+                            </div>
+                        {% elif job.status == 0 %}
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-danger" onclick="delJob(this);" data-toggle="tooltip" data-placement="top" title="Delete"><i class='icon-trash icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-info" onclick="reRunJob(this);" data-toggle="tooltip" data-placement="top" title="Rerun"><i class='icon-repeat icon-white'></i></button>
+                            </div>
+                        {% elif job.status == -3 %}
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-danger" onclick="delJob(this);" data-toggle="tooltip" data-placement="top" title="Delete"><i class='icon-trash icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-warning" onclick="showResumePanel({{ job.id }});" data-toggle="tooltip" data-placement="top" title="Rollback"><i class='icon-share-alt icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-success" onclick="resumeJob(this, {{ job.resume|add:2 }});" data-toggle="tooltip" data-placement="top" title="Resume"><i class='icon-play icon-white'></i></button>
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-info" onclick="reRunJob(this);" data-toggle="tooltip" data-placement="top" title="Rerun"><i class='icon-repeat icon-white'></i></button>
+                            </div>
+                            <div class="text-left" id="resume-{{ job.id }}" style="display: none;">
+                                <hr>
+                                <div class="alert alert-success">
+                                    <span href="#" class="close" onclick="$('#resume-{{ job.id }}').hide();">&times;</span>
+                                    <label for="rollback-{{ job.id }}">Rollback to step:</label>
+                                    <input id="rollback-{{ job.id }}" name="rollback-{{ job.id }}" class="sliderbar" data-slider-id='rollback-{{ job.id }}' type="text" data-slider-min="1" class="form-control" data-slider-max="{{ job.resume|add:2 }}" data-slider-step="1" data-slider-value="{{ job.resume|add:2 }}"/>
+                                    <button style="margin-top: 5px;" data-jid="{{ job.id }}" class="btn btn-warning btn-block" onclick="resumeJob(this);">Apply</button>
+                                </div>
+                            </div>
+                        {% elif job.status > 0 %}
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-danger" onclick="terJob(this);" data-toggle="tooltip" data-placement="top" title="Terminate"><i class='icon-stop icon-white'></i></button>
+                            </div>
+                        {% elif job.status == -2 %}
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button data-jid="{{ job.id }}" style="cursor:pointer;" class="btn btn-danger" onclick="terJob(this);" data-toggle="tooltip" data-placement="top" title="Terminate"><i class='icon-stop icon-white'></i></button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        <ul class="pager">
+            {% if job_list.has_previous %}
+                <li><a href="?page={{ job_list.previous_page_number }}">&lt;</a></li>
+            {% endif %}
+            <li><a>Page {{ job_list.number }} of {{ job_list.paginator.num_pages }}</a></li>
+            {% if job_list.has_next %}
+                <li><a href="?page={{ job_list.next_page_number }}">&gt;</a></li>
+            {% endif %}
+        </ul>
+    </div>
+<div class="modal fade" id="showLog" tabindex="-1" role="dialog" aria-labelledby="showLog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="show-logs-head">Logs</h4>
+            </div>
+            <div class="modal-body"> </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="showFd" tabindex="-1" role="dialog" aria-labelledby="showFd">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="show-fd-head">Output Files</h4>
+            </div>
+            <div class="modal-body">
+                <div class="file-list"></div>
+                <div class="ref-form" style="display: none;">
+                    <button type="button" class="close" onclick="$('.ref-form').hide('fast');"><span aria-hidden="true">&times;</span></button>
+                    <form class="form" id="cf-form" method="post" action="/ui/create-reference-shortcut/">
+                        <div class="form-group">
+                            <label class="control-label" for="name">Reference Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required />
+                            <p class="help-block">Recommended format: <em>NAME_VERSION_FORMAT</em>, for example, GENOME_HG38_FA.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="name">Description (optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <input type="hidden" class="form-control" id="path" name="path" maxlength="255" required />
+                        <input type="hidden" class="form-control" id="source" name="source" value="job" required />
+                        <input type="button" onclick="scReference();" class="btn btn-success btn-block btn-large" value="Add" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+    function refreshJob(){
+        location.reload();
+    }
+    var refT = window.setInterval(refreshJob, 30000);
+    $('.modal').on('shown.bs.modal', function (e) {
+        clearInterval(refT);
+    }).on('hidden.bs.modal', function (e) {
+        refT = window.setInterval(refreshJob, 30000);
+    });
+    $("#query-job").addClass("active");
+    $(".job-nav").addClass("active");
+    var csrftoken = $.cookie('csrftoken');
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings){
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+    });
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+    $('.sliderbar').slider({
+        formatter: function(value) {
+            return value;
+        },
+        tooltip_position:'bottom',
+    });
+    function delJob(obj){
+        var self = $(obj);
+        var jid = self.attr("data-jid");
+        $.post("{% url 'ui:delete_job' %}", {job: jid}, function(data){
+            if(data.status){
+                Messenger().post({
+					message: data.info,
+					showCloseButton: true
+				});
+                $("#job-panel-parent-"+jid).hide("slow");
+		    }else{
+                Messenger().post({
+					message: data.info,
+					type: 'error',
+					showCloseButton: true
+				});
+            };
+        });
+    }
+    function reRunJob(obj){
+        var self = $(obj);
+        var jid = self.attr("data-jid");
+        $.post("{% url 'ui:rerun_job' %}", {job: self.attr("data-jid")}, function(data){
+            if(data.status){
+                Messenger().post({
+					message: data.info,
+					showCloseButton: true
+				});
+                $('#job-status-icon-'+jid).html('<i class="icon-time icon-3x"></i>');
+                $('#job-status-txt-'+jid).html('Reruning');
+		    }else{
+                Messenger().post({
+					message: data.info,
+					type: 'error',
+					showCloseButton: true
+				});
+            };
+        });
+	};
+    function auditJob(obj){
+        var self = $(obj);
+        var jid = self.attr("data-jid");
+        $.post("{% url 'ui:mark_wrong_job' %}", {job: self.attr("data-jid")}, function(data){
+            if(data.status){
+                Messenger().post({
+					message: data.info,
+					showCloseButton: true
+				});
+                $('#job-status-icon-'+jid).html('<i class="icon-remove icon-3x"></i>');
+		    }else{
+                Messenger().post({
+					message: data.info,
+					type: 'error',
+					showCloseButton: true
+				});
+            };
+        });
+	};
+    function showResumePanel(job){
+        $('#resume-'+job).show();
+        $('#job-panel-'+job).animate({scrollTop:$('#resume-'+job).offset().top},1000);
+    }
+    function resumeJob(obj, spec=0){
+        var self = $(obj);
+        var jid = self.attr("data-jid");
+        if(spec==0){
+            spec=$("#rollback-"+jid).text();
+        }
+        $.post("{% url 'ui:resume_job' %}", {job: jid, step:spec}, function(data){
+            if(data.status){
+                Messenger().post({
+					message: data.info,
+					showCloseButton: true
+				});
+                $('#job-status-icon-'+jid).html('<i class="icon-time icon-3x"></i>');
+                $('#job-status-txt-'+jid).html('Resuming');
+                $('#resume-'+jid).hide();
+		    }else{
+                Messenger().post({
+					message: data.info,
+					type: 'error',
+					showCloseButton: true
+				});
+            };
+        });
+    }
+    function terJob(obj){
+		var self = $(obj);
+        var jid = self.attr("data-jid");
+        $.post("{% url 'ui:terminate_job' %}", {job: self.attr("data-jid")}, function(data){
+            if(data.status){
+                Messenger().post({
+                    message: data.info,
+                    showCloseButton: true
+                });
+                $('#job-status-icon-'+jid).html('<i class="icon-time icon-3x"></i>');
+                $('#job-status-txt-'+jid).html('Terminating');
+		    }else{
+                Messenger().post({
+                    message: data.info,
+                    type: 'error',
+                    showCloseButton: true
+				});
+            };
+        });
+	};
+    function showLog(recId){
+        $.post("{% url 'ui:show_job_log' %}", {job: recId}, function(data){
+            if(data.status){
+                $('#showLog .modal-body').html(data.info);
+                $('#showLog').modal();
+		    }else{
+                Messenger().post({
+                    message: data.info,
+                    type: 'error',
+                    showCloseButton: true
+				});
+            };
+        });
+    }
+    function showFolder(recId){
+        $.post("{% url 'ui:show_job_folder' %}", {job: recId}, function(data){
+            if(data.status){
+                $('#showFd .modal-body .file-list').html(data.info);
+                $('#showFd').modal();
+		    }else{
+                Messenger().post({
+                    message: data.info,
+                    type: 'error',
+                    showCloseButton: true
+				});
+            };
+        });
+    }
+    function delFile(obj){
+        var self = $(obj);
+        $.get("/ui/delete-job-file/"+self.attr("data-path"), function(data){
+            if(data.status){
+                self.parent().parent().hide('fast');
+            };
+        });
+    };
+    function scReference(){
+        var self = $("#cf-form");
+        $.post(self.attr("action"), self.serialize(), function(data){
+            if(data.status){
+                Messenger().post({
+                    message: "Created.",
+                    showCloseButton: true,
+				});
+                $('#showFd').modal('hide');
+		    }else{
+                Messenger().post({
+                    message: data.info,
+                    type: 'error',
+                    showCloseButton: true
+				});
+            };
+        });
+    };
+    $("#click-all").click(function(){
+        if($("#click-all").attr("data-checked") == 0){
+            $(".batch_operation").prop("checked", true);
+            $("#click-all").attr("data-checked", 1);
+        }else{
+	        $(".batch_operation").prop("checked", false);
+            $("#click-all").attr("data-checked", 0);
+        }
+    });
+    function batchOperation(){
+        var valArr = new Array;
+        $(":checkbox").each(function(i){
+            if($(this).prop("checked")){
+                valArr[i] = $(this).val();
+            }
+        });
+		var values = valArr.join(',');
+      	if (values){
+            $.post("{% url 'ui:batch_operation' %}", {operation: $("#batch-action").val(), jobs: values}, function(data){
+                if(data.status){
+                    location.reload();
+		        }else{
+                    Messenger().post({
+					    message: data.info,
+					    type: 'error',
+					    showCloseButton: true
+                });
+            };
+        });
+        }else{
+            alert("Please check items!");
+        }
+    }
+{% endblock %}

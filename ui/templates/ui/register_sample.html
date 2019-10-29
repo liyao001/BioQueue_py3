@@ -1,0 +1,223 @@
+{% extends "ui/base.html" %}
+{% block title %}Register Sample | BioQueue{% endblock %}
+{% block content %}
+    <div class="page-header">
+        <h1>Register Sample</h1>
+    </div>
+    {{ form }}
+    {% if user_files %}
+        <table class="table table-bordered table-hover">
+            <thead>
+            <tr>
+                <th>File Name</th>
+                <th>File Size</th>
+                <th>Create Time</th>
+                <th>Operate</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for file_item in user_files %}
+                <tr>
+                    <td>{{ file_item.name }}</td>
+                    <td>{{ file_item.file_size | filesizeformat }}</td>
+                    <td>{{ file_item.file_create }}</td>
+                    <td> <span class='label label-warning op-label'
+                               data-path='{{ file_item.trace }}'
+                               onclick=showRegister(this);><i
+                            class="icon-edit-sign"></i> Register</span> <span class='label label-danger op-label'
+                                                                              data-path='{{ file_item.trace }}'
+                                                                              onclick=delFile(this);><i
+                            class="icon-trash"></i> Delete</span> <a
+                            class='label label-success op-label' href='/ui/download-file/f/{{ file_item.trace }}'><i
+                            class="icon-download-alt"></i> Download</a> <span class='label label-info op-label'
+                                                                              data-path='{{ file_item.trace }}'
+                                                                              onclick=showQuickRef(this);><i
+                            class="icon-book"></i> Create a reference</span></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div>You have not uploaded any file yet.</div>
+    {% endif %}
+    {% if user_ref_files %}
+        <div class="page-header">
+            <h1>My Reference Files</h1>
+        </div>
+        <table class="table table-bordered table-hover">
+            <thead>
+            <tr>
+                <th>File Name</th>
+                <th>File Size</th>
+                <th>Create Time</th>
+                <th>Operate</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for file_item in user_ref_files %}
+                <tr>
+                    <td>{{ file_item.name }}</td>
+                    <td>{{ file_item.file_size | filesizeformat }}</td>
+                    <td>{{ file_item.file_create }}</td>
+                    <td><span class='label label-danger' data-path='{{ file_item.trace }}' style='cursor:pointer;'
+                              onclick=delFile(this);><i class="icon-trash"></i> Delete</span> <a
+                            class='label label-success' href='/ui/download-file/f/{{ file_item.trace }}'
+                            style='cursor:pointer;'><i class="icon-download-alt"></i> Download</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    <div class="modal fade" id="register-sample" tabindex="-1" role="dialog" aria-labelledby="rs">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="sr">Register sample</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form" method="post" action="{% url 'ui:register_sample' %}">
+                        <div class="form-group">
+                            <label class="control-label" for="name">Sample Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required/>
+                            <p class="help-block">Human friendly name of the sample.</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="protocol-selector">Experiment type</label>
+                            <select class="form-control input-xlarge" id="experiment-selector" name="experiment"
+                                    onchange="parse_questions(this);" required>
+                                <option data-questions="None" value="">Please choose an experiment</option>
+                                {% for experiment in experiments %}
+                                    <option data-questions="{{ experiment.required_fields }}"
+                                            value="{{ experiment.id }}">{{ experiment.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="name">Description (strongly recommended)</label>
+                            <textarea class="form-control" id="sample-attribute" name="attribute" rows="5"></textarea>
+                        </div>
+                        <input type="hidden" class="form-control" id="rs-path" name="file_path" maxlength="500" required/>
+                        <input type="submit" class="btn btn-success btn-block btn-large" value="Add"/>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="showCR" tabindex="-1" role="dialog" aria-labelledby="cr">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="cr">Use uploaded file as reference</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form" method="post" action="/ui/create-reference-shortcut/">
+                        <div class="form-group">
+                            <label class="control-label" for="name">Reference Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required/>
+                            <p class="help-block">Recommended format: <em>NAME_VERSION_FORMAT</em>, for example,
+                                GENOME_HG38_FA.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="name">Description (optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <input type="hidden" class="form-control" id="path" name="path" maxlength="255" required/>
+                        <input type="hidden" class="form-control" id="source" name="source" value="upload" required/>
+                        <input type="submit" class="btn btn-success btn-block btn-large" value="Add"/>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script %}
+        var csrftoken = $.cookie('csrftoken');
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        });
+        $("form").submit(function () {
+            var self = $(this);
+            $.post(self.attr("action"), self.serialize(), success, "json");
+            return false;
+
+            function success(data) {
+                if (data.status) {
+                    Messenger().post({
+                        message: 'Created.',
+                        showCloseButton: true
+                    });
+                    self[0].reset();
+                    $('#showCR').modal('hide');
+                    $('#register-sample').modal('hide');
+                } else {
+                    Messenger().post({
+                        message: data.info,
+                        type: 'error',
+                        showCloseButton: true,
+                    });
+                }
+            }
+        });
+
+        function showRegister(obj) {
+            var self = $(obj);
+            $('#register-sample #rs-path').val(self.attr("data-path"));
+            $('#register-sample').modal();
+        };
+
+        function delFile(obj) {
+            var self = $(obj);
+            $.get("/ui/delete-upload-file/" + self.attr("data-path"), function (data) {
+                if (data.status) {
+                    self.parent().parent().hide('fast');
+                }
+                ;
+            });
+        };
+
+        function showQuickRef(obj) {
+            var self = $(obj);
+            $('#showCR #path').val(self.attr("data-path"));
+            $('#showCR').modal();
+        };
+
+        function delFile(obj) {
+            var self = $(obj);
+            $.get("/ui/delete-upload-file/" + self.attr("data-path"), function (data) {
+                if (data.status) {
+                    self.parent().parent().hide('fast');
+                }
+                ;
+            });
+        };
+
+        function fs(obj) {
+            var self = $(obj);
+            $.get("{% url 'ui:file_support' %}",
+                {
+                    ext: self.attr("data-ext"),
+                    support: self.attr("data-support"),
+                    file: self.attr("data-file")
+                },
+                function (data) {
+                    if (data.status) {
+                        Messenger().post({
+                            message: data.info,
+                            showCloseButton: true
+                        });
+                    } else {
+                        Messenger().post({
+                            message: data.info,
+                            type: 'error',
+                            showCloseButton: true
+                        });
+                    }
+                });
+        }
+{% endblock %}

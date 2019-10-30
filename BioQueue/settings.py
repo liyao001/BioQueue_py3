@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'accounts',
     'ui',
     'worker',
+    'django_ftpserver',
 ]
 
 MIDDLEWARE = [

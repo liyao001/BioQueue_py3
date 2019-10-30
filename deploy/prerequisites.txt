@@ -3,6 +3,6 @@ requests
 MySQL-python
 numpy
 psutil
-pyftpdlib
+django-ftpserver
 Django
 python-daemon

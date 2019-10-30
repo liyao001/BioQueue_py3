@@ -1372,7 +1372,8 @@ def register_sample(request):
                 except Sample.DoesNotExist:
                     Sample(name=cd["name"], file_path=cd["file_path"],
                            user_id=request.user.id, experiment=exp,
-                           attribute=cd["attribute"]).save()
+                           attribute=cd["attribute"],
+                           inner_path=cd["inner_path"]).save()
                     return success("Sample registered")
                 except Sample.MultipleObjectsReturned:
                     return error("Duplicate records!")

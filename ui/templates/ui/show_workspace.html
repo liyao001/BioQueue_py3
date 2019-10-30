@@ -10,7 +10,7 @@
         <table class="table table-bordered table-hover">
             <thead>
             <tr>
-                <th>File Name</th>
+                <th>Sample Name</th>
                 <th>Create Time</th>
                 <th>Operate</th>
             </tr>
@@ -38,7 +38,7 @@
 </span></td>
                 </tr>
                 <tr>
-                    <td colspan="3">Path: {{ file_item.inner }} <br>{{ file_item.attribute|linebreaksbr }}</td>
+                    <td colspan="3">File name: {{ file_item.inner }} <br>{{ file_item.attribute|linebreaksbr }}</td>
                 </tr>
             {% endfor %}
             </tbody>

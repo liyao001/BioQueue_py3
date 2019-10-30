@@ -1386,7 +1386,8 @@ def register_sample(request):
             return error(str(reg_form.errors))
     else:
         context = {'user_files': show_workspace_files(request.user.id, 'uploads'),
-                   'user_ref_files': show_workspace_files(request.user.id, 'refs')}
+                   'user_ref_files': show_workspace_files(request.user.id, 'refs'),
+                   'experiments': Experiment.objects.filter(),}
 
         return render(request, 'ui/register_sample.html', context)
 

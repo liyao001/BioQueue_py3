@@ -508,11 +508,10 @@ def delete_ve(request):
 @login_required
 def download_file(request, f):
     file_path = os.path.join(get_config('env', 'workspace'),
-                             str(request.user.id), base64.b64decode(f.replace('f/', '')).decode())
+                             str(request.user.id), base64.b64decode(f.replace('f/', '').encode()).decode())
     return download(file_path)
 
 
-@login_required
 def download(file_path):
     try:
         response = FileResponse(open(file_path, 'rb'))
@@ -551,7 +550,7 @@ def file_support(request):
         fs_form = FileSupportForm(request.GET)
         if fs_form.is_valid():
             cd = fs_form.cleaned_data
-            real_file = cd["file"]
+            real_file = base64.b64decode(cd["file"]).decode()
             _, ext = os.path.splitext(real_file)
             from .tools import get_maintenance_protocols
             protocol_name = "%s (%s, %s)" % (cd["support"], cd["exp"], ext)
@@ -738,7 +737,7 @@ def get_job_files(job_id, user_id, super_user):
                     tmp['name'] = file_path
                     tmp['file_size'] = os.path.getsize(file_full_path)
                     tmp['file_create'] = time.ctime(os.path.getctime(file_full_path))
-                    tmp['trace'] = base64.b64encode(os.path.join(result_folder, file_path))
+                    tmp['trace'] = base64.b64encode(os.path.join(result_folder, file_path).encode()).decode()
                     user_files.append(tmp)
             return user_files
         else:
@@ -1624,7 +1623,6 @@ def show_job_folder(request):
         if query_job_form.is_valid():
             cd = query_job_form.cleaned_data
             user_files = get_job_files(cd["job"], request.user.id, request.user.is_superuser)
-            print(type(user_files))
             if type(user_files) is list:
                 template = loader.get_template('ui/show_job_folder.html')
                 import operator

@@ -551,7 +551,7 @@ def file_support(request):
         fs_form = FileSupportForm(request.GET)
         if fs_form.is_valid():
             cd = fs_form.cleaned_data
-            real_file = base64.b64decode(cd["file"].encode()).decode()
+            real_file = cd["file"]
             _, ext = os.path.splitext(real_file)
             from .tools import get_maintenance_protocols
             protocol_name = "%s (%s, %s)" % (cd["support"], cd["exp"], ext)
@@ -1782,6 +1782,7 @@ def show_workspace(request):
             "create_time": sample.create_time,
             "trace": sample.file_path,
             "inner": sample.inner_path,
+            "raw": base64.b64decode(sample.inner_path).decode(),
             "attribute": sample.attribute,
             "file_support": experiment_cache[sample.experiment.id],
             "exp": sample.experiment.name,

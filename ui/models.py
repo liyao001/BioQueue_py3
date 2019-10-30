@@ -294,7 +294,8 @@ class Experiment(models.Model):
     
 class Sample(models.Model):
     name = models.CharField(max_length=500)
-    file_path = models.TextField()
+    file_path = models.TextField()  # real file path with uploads as prefix
+    inner_path = models.TextField()  # file path without uploads as prefix
     user_id = models.CharField(max_length=50)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     attribute = models.TextField(blank=True, null=True)

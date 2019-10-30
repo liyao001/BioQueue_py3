@@ -59,7 +59,7 @@
                     <td>{{ file_item.name }}</td>
                     <td>{{ file_item.file_size | filesizeformat }}</td>
                     <td>{{ file_item.file_create }}</td>
-                    <td><span class='label label-danger' data-path='{{ file_item.trace }}' style='cursor:pointer;'
+                    <td><span class='label label-danger' data-path='{{ file_item.trace }}' data-inner='{{ file_item.name }}' style='cursor:pointer;'
                               onclick=delFile(this);><i class="icon-trash"></i> Delete</span> <a
                             class='label label-success' href='/ui/download-file/f/{{ file_item.trace }}'
                             style='cursor:pointer;'><i class="icon-download-alt"></i> Download</a></td>
@@ -99,6 +99,7 @@
                             <textarea class="form-control" id="sample-attribute" name="attribute" rows="5"></textarea>
                         </div>
                         <input type="hidden" class="form-control" id="rs-path" name="file_path" maxlength="500" required/>
+                        <input type="hidden" class="form-control" id="us-path" name="show_path" maxlength="500" required/>
                         <input type="submit" class="btn btn-success btn-block btn-large" value="Add"/>
                     </form>
                 </div>
@@ -168,6 +169,7 @@
         function showRegister(obj) {
             var self = $(obj);
             $('#register-sample #rs-path').val(self.attr("data-path"));
+            $('#register-sample #us-path').val(self.attr("data-path"));
             $('#register-sample').modal();
         };
 

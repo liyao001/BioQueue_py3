@@ -251,5 +251,6 @@ class BatchJobForm(forms.Form):
 class AddSampleForm(forms.Form):
     name = forms.CharField(max_length=500, required=True)
     file_path = forms.CharField(required=True)
+    inner_path = forms.CharField(required=True)
     experiment = forms.IntegerField(required=True)
     attribute = forms.CharField(required=True)

@@ -364,7 +364,6 @@ def create_reference_shortcut(request):
     reference_form = CreateReferenceForm(request.POST)
     if reference_form.is_valid():
         cd = reference_form.cleaned_data
-        import base64
         if cd['source'] == 'upload' or cd['source'] == 'job':
             file_path = os.path.join(get_config('env', 'workspace'), str(request.user.id), base64.b64decode(cd['path']))
             ref = References(
@@ -403,8 +402,7 @@ def delete_job(request):
 
 @login_required
 def delete_job_file(request, f):
-    import base64
-    file_path = os.path.join(get_config('env', 'workspace'), str(request.user.id), base64.b64decode(f))
+    file_path = os.path.join(get_config('env', 'workspace'), str(request.user.id), base64.b64decode(f).decode())
     delete_file(file_path)
 
     return success('Deleted')
@@ -482,8 +480,7 @@ def delete_step(request):
 
 @login_required
 def delete_upload_file(request, f):
-    import base64
-    file_path = os.path.join(get_config('env', 'workspace'), str(request.user.id), base64.b64decode(f))
+    file_path = os.path.join(get_config('env', 'workspace'), str(request.user.id), base64.b64decode(f).decode())
     delete_file(file_path)
     fm_path = os.path.join(get_config('env', 'workspace'), "file_comment", f)
     if os.path.exists(fm_path):
@@ -510,7 +507,6 @@ def delete_ve(request):
 
 @login_required
 def download_file(request, f):
-    import base64
     file_path = os.path.join(get_config('env', 'workspace'),
                              str(request.user.id), base64.b64decode(f.replace('f/', '')).decode())
     return download(file_path)
@@ -1387,7 +1383,7 @@ def register_sample(request):
     else:
         context = {'user_files': show_workspace_files(request.user.id, 'uploads'),
                    'user_ref_files': show_workspace_files(request.user.id, 'refs'),
-                   'experiments': Experiment.objects.filter(),}
+                   'experiments': Experiment.objects.filter(), }
 
         return render(request, 'ui/register_sample.html', context)
 
@@ -1464,10 +1460,9 @@ def resume_job(request):
 
 @login_required
 def send_file_as_reference(request, f):
-    import base64
     user_workspace = os.path.join(get_config('env', 'workspace'),
                                   str(request.user.id))
-    file_path = os.path.join(user_workspace, base64.b64decode(f.replace('f/', '')))
+    file_path = os.path.join(user_workspace, base64.b64decode(f.replace('f/', '')).decode())
     ref_folder = os.path.join(user_workspace, 'refs')
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
         return error('Cannot find the file.')
@@ -1711,8 +1706,8 @@ def show_upload_files(request, special_type='uploads'):
                 file_name_warning = 1
             else:
                 try:
-                    file_full_path.decode("ascii")
-                except UnicodeDecodeError:
+                    file_full_path.encode("ascii")
+                except UnicodeEncodeError:
                     file_name_warning = 1
             file_path = file_full_path.replace(user_path + '\\', '') \
                 .replace(user_path + '/', '').replace(user_path, '')
@@ -1740,26 +1735,30 @@ def check_file_comment(trace, prefix=""):
 
 def show_workspace_files(user_id, special_type='uploads'):
     import time
-    import base64
-
     user_files = []
     user_path = os.path.join(get_config('env', 'workspace'), str(user_id), special_type)
-    fm_path = os.path.join(get_config('env', 'workspace'), 'file_comment')
+    # fm_path = os.path.join(get_config('env', 'workspace'), 'file_comment')
     # fs = config_init(2)
 
     if not os.path.exists(user_path):
         os.makedirs(user_path)
 
-    for file_name in os.listdir(user_path):
-        file_path = os.path.join(user_path, file_name)
-        # name, ext = os.path.splitext(file_name)
-        tmp = dict()
-        tmp['name'] = file_name
-        tmp['file_size'] = os.path.getsize(file_path)
-        tmp['file_create'] = time.ctime(os.path.getctime(file_path))
-        tmp['trace'] = base64.b64encode(os.path.join(special_type, file_name).encode()).decode()
-        tmp['raw'] = os.path.join(special_type, file_name)
-        user_files.append(tmp)
+    # for file_name in os.listdir(user_path):
+    for root, dirs, files in os.walk(user_path):
+        for file_name in files:
+            file_full_path = os.path.join(root, file_name)
+            # file_path = file_full_path.replace(user_path + '\\', '').replace(user_path + '/', '').replace(user_path, '')
+
+            subs = ""
+            if root != user_path:
+                subs = root.replace(user_path+"/", "")
+            tmp = dict()
+            tmp['name'] = os.path.join(subs, file_name)
+            tmp['file_size'] = os.path.getsize(file_full_path)
+            tmp['file_create'] = time.ctime(os.path.getctime(file_full_path))
+            tmp['trace'] = base64.b64encode(os.path.join(special_type, tmp['name']).encode()).decode()
+            tmp['raw'] = base64.b64encode(tmp['name'].encode()).decode()
+            user_files.append(tmp)
     user_files = sorted(user_files, key=lambda user_files: user_files['name'])
     return user_files
 
@@ -1773,7 +1772,7 @@ def show_workspace(request):
         if sample.experiment.id not in experiment_cache:
             try:
                 t = [fs.split("=") for fs in sample.experiment.file_support.split(";") if
-                 fs != ""]
+                     fs != ""]
             except:
                 t = []
             experiment_cache[sample.experiment.id] = t

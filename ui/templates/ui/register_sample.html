@@ -220,4 +220,8 @@
                     }
                 });
         }
+        function parse_questions(obj) {
+            var self = $("#experiment-selector :selected");
+            self.data("questions").split(";").forEach(function(item){if(item!=""){$("#sample-attribute").val($("#sample-attribute").val()+item+":\n")}});
+        }
 {% endblock %}

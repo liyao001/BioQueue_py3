@@ -31,14 +31,14 @@
   <a class="dropdown-toggle" data-toggle="dropdown" href="#" style="color:white;"><i class="icon-th-list"></i> More</a>
   <ul class="dropdown-menu op-more-container" role="menu" aria-labelledby="dLabel">
       {% for fs in file_item.file_support %}
-          <li><a data-file="{{ file_item.trace }}" data-exp="{{ file_item.exp }}" data-support="{{ fs.1 }}"
+          <li><a data-file="{{ file_item.inner }}" data-exp="{{ file_item.exp }}" data-support="{{ fs.1 }}"
                  onclick="fs(this);">{{ fs.0 }}</a></li>
       {% endfor %}
   </ul>
 </span></td>
                 </tr>
                 <tr>
-                    <td colspan="3">{{ file_item.attribute|linebreaksbr }}</td>
+                    <td colspan="3">Path: {{ file_item.inner_path}} <br>{{ file_item.attribute|linebreaksbr }}</td>
                 </tr>
             {% endfor %}
             </tbody>

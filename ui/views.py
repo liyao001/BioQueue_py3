@@ -1780,6 +1780,7 @@ def show_workspace(request):
             "name": sample.name,
             "create_time": sample.create_time,
             "trace": sample.file_path,
+            "inner": sample.inner_path,
             "attribute": sample.attribute,
             "file_support": experiment_cache[sample.experiment.id],
             "exp": sample.experiment.name,

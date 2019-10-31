@@ -1793,7 +1793,7 @@ def show_workspace(request):
             "file_support": experiment_cache[sample.experiment.id],
             "exp": sample.experiment.name,
         })
-    context = {'samples': translated_samples}
+    context = {'samples': translated_samples, 'raw': selected_samples}
     return render(request, 'ui/show_workspace.html', context)
 
 

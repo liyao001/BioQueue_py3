@@ -47,12 +47,12 @@
         <div>You have not uploaded or registered any file yet.</div>
     {% endif %}
     <ul class="pager">
-    {% if samples.has_previous %}
-        <li><a href="?page={{ samples.previous_page_number }}">&lt;</a></li>
+    {% if raw.has_previous %}
+        <li><a href="?page={{ raw.previous_page_number }}">&lt;</a></li>
     {% endif %}
-        <li><a>Page {{ samples.number }} of {{ samples.paginator.num_pages }}</a></li>
-    {% if samples.has_next %}
-        <li><a href="?page={{ samples.next_page_number }}">&gt;</a></li>
+        <li><a>Page {{ raw.number }} of {{ raw.paginator.num_pages }}</a></li>
+    {% if raw.has_next %}
+        <li><a href="?page={{ raw.next_page_number }}">&gt;</a></li>
     {% endif %}
     </ul>
     {% if user_ref_files %}

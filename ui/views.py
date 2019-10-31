@@ -1768,7 +1768,7 @@ def show_workspace(request):
         samples = Sample.objects.order_by('-create_time').all()
     else:
         samples = Sample.objects.filter(user_id=request.user.id).order_by('-create_time').all()
-    paginator = Paginator(samples, 12)
+    paginator = Paginator(samples, 10)
 
     page = request.GET.get('page')
 

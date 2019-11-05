@@ -314,14 +314,14 @@ def is_text(s, threshold=0.3):
     :param threshold: float, threshold for the max proportion in a string which can be null translates
     :return: 
     """
-    import string
+    # import string
     text_characters = "".join(map(chr, range(32, 127)))+"\n\r\t\b"
-    _null_trans = string.maketrans("", "")
+    _null_trans = str.maketrans("", "")
     if "\0" in s:
         return False
     if not s:
         return True
-    t = s.translate(_null_trans, text_characters)
+    t = text_characters.translate(_null_trans)
     return len(t)/len(s) <= threshold
 
 
@@ -342,27 +342,24 @@ def get_job_log(file_path):
     :return: string, If size of the file is less than 1MB, it will return the last 100 lines, or it will return the last 10 KB.
     """
     _1_mb_in_bytes = 1024000
-    try:
-        if is_text_file(file_path):
-            with open(file_path, 'r') as file_handler:
-                if os.path.getsize(file_path) > _1_mb_in_bytes:
-                    off = -10240
-                    file_handler.seek(off, 2)
-                    log = file_handler.readlines()
-                    log.reverse()
-                else:
-                    log = file_handler.readlines()
-                    log.reverse()
-                    len_log = len(log)
-                    read_lines = 100 if len_log > 100 else len_log
-                    log = log[:read_lines]
-            log_content = '<br />'.join(log)
-            return log_content
-        else:
-            return 'This is a binary file.'
-    except Exception as e:
-        print(e)
-        return ''
+    if is_text_file(file_path):
+        with open(file_path, 'rb') as file_handler:
+            if os.path.getsize(file_path) > _1_mb_in_bytes:
+                off = -10240
+                file_handler.seek(off, 2)
+                log = file_handler.readlines()
+                log.reverse()
+            else:
+                log = file_handler.readlines()
+                log.reverse()
+                len_log = len(log)
+                read_lines = 100 if len_log > 100 else len_log
+                log = log[:read_lines]
+        de_log = [x.decode('utf-8') for x in log]
+        log_content = '<br />'.join(de_log)
+        return log_content
+    else:
+        return 'This is a binary file.'
 
 
 def check_shell_sig(command_tuple):

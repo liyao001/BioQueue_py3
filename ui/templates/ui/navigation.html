@@ -48,7 +48,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 {% if user.is_authenticated %}
-                <li><a>Hello, {{ user.first_name}} {{ user.last_name}}.</a></li>
+                <li><a>Hello, {{ user.first_name}} {{ user.last_name}} ({{ user.username }}).</a></li>
             {% endif %}
                 {% if user.is_staff %}
                 <li><a href="/admin"><i class="icon-wrench"></i> Admin</a></li>

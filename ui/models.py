@@ -110,8 +110,7 @@ class Protocol(models.Model):
 
     def update_parameter(self, new_parameter):
         import hashlib
-        m = hashlib.md5()
-        m.update(self.software + ' ' + new_parameter.strip())
+        m = hashlib.md5(str(self.software + ' ' + new_parameter.strip()).encode())
         self.hash = m.hexdigest()
         self.parameter = new_parameter
         return 1

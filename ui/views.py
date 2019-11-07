@@ -1764,10 +1764,18 @@ def show_workspace_files(user_id, special_type='uploads'):
 
 @login_required
 def show_workspace(request):
-    samples = Sample.objects.filter()
+    if request.user.is_superuser:
+        samples = Sample.objects.order_by('-create_time').all()
+    else:
+        samples = Sample.objects.filter(user_id=request.user.id).order_by('-create_time').all()
+    paginator = Paginator(samples, 10)
+
+    page = request.GET.get('page')
+
+    selected_samples = page_info(paginator, page)
     translated_samples = []
     experiment_cache = {}
-    for sample in samples:
+    for sample in selected_samples:
         if sample.experiment.id not in experiment_cache:
             try:
                 t = [fs.split("=") for fs in sample.experiment.file_support.split(";") if
@@ -1785,7 +1793,7 @@ def show_workspace(request):
             "file_support": experiment_cache[sample.experiment.id],
             "exp": sample.experiment.name,
         })
-    context = {'samples': translated_samples}
+    context = {'samples': translated_samples, 'raw': selected_samples}
     return render(request, 'ui/show_workspace.html', context)
 
 

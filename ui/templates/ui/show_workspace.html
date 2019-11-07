@@ -46,6 +46,15 @@
     {% else %}
         <div>You have not uploaded or registered any file yet.</div>
     {% endif %}
+    <ul class="pager">
+    {% if raw.has_previous %}
+        <li><a href="?page={{ raw.previous_page_number }}">&lt;</a></li>
+    {% endif %}
+        <li><a>Page {{ raw.number }} of {{ raw.paginator.num_pages }}</a></li>
+    {% if raw.has_next %}
+        <li><a href="?page={{ raw.next_page_number }}">&gt;</a></li>
+    {% endif %}
+    </ul>
     {% if user_ref_files %}
         <div class="page-header">
             <h1>My Reference Files</h1>

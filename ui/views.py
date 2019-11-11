@@ -797,15 +797,12 @@ def import_protocol_by_fetch(request):
         form = FetchRemoteProtocolForm(request.POST)
         if form.is_valid():
             try:
-                try:
-                    from urllib2 import urlopen
-                except ImportError:
-                    from urllib.request import urlopen
+                from urllib.request import urlopen, Request
 
                 api_bus = get_config('program', 'api', 1) + '/Protocol/exportProtocolStdout?sig=' + request.POST['uid']
                 try:
-                    res_data = urlopen(api_bus)
-                    protocol_raw = res_data.read()
+                    req = Request(api_bus, headers={"User-Agent": "BioQueue-client"})
+                    protocol_raw = urlopen(req).read()
                     import json
                     import hashlib
                     protocol_json = json.loads(protocol_raw)

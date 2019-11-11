@@ -8,7 +8,7 @@
 # @Github: https://github.com/liyao001
 import requests
 import base64
-from baseDriver import get_config, get_bioqueue_version
+from .baseDriver import get_config, get_bioqueue_version
 
 
 def feedback(software, parameter, mail):

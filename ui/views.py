@@ -17,6 +17,7 @@ import os
 import re
 import base64
 from urllib.parse import unquote
+from urllib.request import urlopen, Request
 
 
 @login_required
@@ -677,17 +678,12 @@ def fetch_data(request):
 
 @login_required
 def fetch_learning(request):
-    try:
-        from urllib2 import urlopen
-    except ImportError:
-        from urllib.request import urlopen
-
     import json
     query_string = request.GET['hash'] + ',' + request.GET['type'] + ',' + str(get_config('env', 'cpu')) \
                    + ',' + str(get_config('env', 'memory')) + ',' + str(os_to_int())
     api_bus = get_config('program', 'api', 1) + '/Index/share/q/' + query_string
     try:
-        res_data = urlopen(api_bus)
+        res_data = urlopen(Request(api_bus, headers={"User-Agent": "BioQueue-client"})).read()
         res = json.loads(res_data.read())
         session_dict = {'hash': request.GET['hash'],
                         'type': request.GET['type'],
@@ -797,15 +793,13 @@ def import_protocol_by_fetch(request):
         form = FetchRemoteProtocolForm(request.POST)
         if form.is_valid():
             try:
-                from urllib.request import urlopen, Request
-
                 api_bus = get_config('program', 'api', 1) + '/Protocol/exportProtocolStdout?sig=' + request.POST['uid']
                 try:
                     req = Request(api_bus, headers={"User-Agent": "BioQueue-client"})
                     protocol_raw = urlopen(req).read()
                     import json
                     import hashlib
-                    protocol_json = json.loads(protocol_raw)
+                    protocol_json = json.loads(protocol_raw.decode("utf-8"))
                     if ProtocolList.objects.filter(name=protocol_json['name'], user_id=request.user.id).exists():
                         return error('Duplicate record!')
                     protocol = ProtocolList(name=protocol_json['name'], user_id=request.user.id)
@@ -1340,16 +1334,11 @@ def query_usage(request):
     :param request: 
     :return: 
     """
-    try:
-        from urllib2 import urlopen
-    except ImportError:
-        from urllib.request import urlopen
-
     api_bus = get_config('program', 'api', 1) + '/Kb/findSoftwareUsage?software=' + request.POST['software']
     try:
-        res_data = urlopen(api_bus)
-        res = res_data.read()
-        return HttpResponse(res)
+        req = Request(api_bus, headers={"User-Agent": "BioQueue-client"})
+        res = urlopen(req).read()
+        return HttpResponse(res.decode("utf-8"))
     except Exception as e:
         return error(api_bus)
 

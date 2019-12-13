@@ -58,6 +58,10 @@
                     <div id="lf-container" class="form-group alert alert-info alert-dismissable" role="alert"
                          style="display: none;">
                         <button type="button" class="close" onclick="$('#lf-container').hide();$('#lf-trigger').prop('disabled', false);" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <div class="input-group">
+                            <span class="input-group-addon" id="basic-addon3">Uploeaded files</span>
+                            <input id="uploader-filter" type="text" class="form-control">
+                        </div>
                         <label>Uploaded files:</label>
                         <div class="checkbox" id="lf-list">
                         </div>
@@ -158,11 +162,13 @@ $('#prev_jobs').on('autocomplete.select', function(evt, item) {
 });
 $("#job-file-selector").change(function() {
     if($("#job-file-selector").val()!="--"){
+    {% verbatim %}
         if($("#input_files").val()==""){
-            $("#input_files").val("{History:"+$("#job-file-selector").val()+"}")
+            $("#input_files").val("{{History:"+$("#job-file-selector").val()+"}}");
         }else{
-            $("#input_files").val($("#input_files").val()+";{History:"+$("#job-file-selector").val()+"}")
+            $("#input_files").val($("#input_files").val()+";{{History:"+$("#job-file-selector").val()+"}}")
         }
+    {% endverbatim %}
     }
 });
 $("#protocol-selector").change(function () {
@@ -199,11 +205,13 @@ $("#single-job-form").submit(function () {
 
 function ftp_files(obj) {
     var self = $(obj);
+    {% verbatim %}
     if (self.prop("checked") == true) {
-        $("#input_files").val($("#input_files").val() + "{Uploaded:" + self.val() + "};");
+        $("#input_files").val($("#input_files").val() + "{{Uploaded:" + self.val() + "}};");
     } else {
-        $("#input_files").val($("#input_files").val().replace("{Uploaded:" + self.val() + "};", ""));
+        $("#input_files").val($("#input_files").val().replace("{{Uploaded:" + self.val() + "}};", ""));
     }
+    {% endverbatim %}
 }
 
 $(function () {
@@ -221,5 +229,14 @@ $("#jf-trigger").click(function () {
     $("#jf-trigger").attr("disabled", true);
     $("#lf-container").hide();
     $("#jf-container").show();
+});
+$("#uploader-filter").on('input',function(e){
+    $("#lf-list label").each(function( index ){
+      if($(this).text().search($("#uploader-filter").val()) == -1){
+        $(this).hide();
+      }else{
+        $(this).show();
+      }
+    });
 });
 {% endblock %}

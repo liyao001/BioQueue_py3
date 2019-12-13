@@ -301,7 +301,7 @@ def build_plain_protocol(request, protocol_id):
 
 @staff_member_required
 def clean_dead_lock(request):
-    Queue.objects.filter(status__gt=0).update(status=-3)
+    Queue.objects.filter(status__gte=0).update(status=-3)
     Queue.objects.filter(status=-2).update(status=-3)
     return HttpResponseRedirect('/ui/settings')
 

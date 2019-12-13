@@ -1367,7 +1367,11 @@ def register_sample(request):
         else:
             return error(str(reg_form.errors))
     else:
-        context = {'user_files': show_workspace_files(request.user.id, 'uploads'),
+        block_files = Sample.objects.filter(user_id=request.user.id)
+        block_file_real = set()
+        for bf in block_files:
+            block_file_real.add(bf.inner_path)
+        context = {'user_files': show_workspace_files(request.user.id, 'uploads', block_files=block_file_real),
                    'user_ref_files': show_workspace_files(request.user.id, 'refs'),
                    'experiments': Experiment.objects.filter(), }
 
@@ -1718,7 +1722,7 @@ def check_file_comment(trace, prefix=""):
     return unquote(comment)
 
 
-def show_workspace_files(user_id, special_type='uploads'):
+def show_workspace_files(user_id, special_type='uploads', block_files=None):
     import time
     user_files = []
     user_path = os.path.join(get_config('env', 'workspace'), str(user_id), special_type)
@@ -1743,7 +1747,8 @@ def show_workspace_files(user_id, special_type='uploads'):
             tmp['file_create'] = time.ctime(os.path.getctime(file_full_path))
             tmp['trace'] = base64.b64encode(os.path.join(special_type, tmp['name']).encode()).decode()
             tmp['raw'] = base64.b64encode(tmp['name'].encode()).decode()
-            user_files.append(tmp)
+            if block_files is not None and tmp['raw'] not in block_files:
+                user_files.append(tmp)
     user_files = sorted(user_files, key=lambda user_files: user_files['name'])
     return user_files
 

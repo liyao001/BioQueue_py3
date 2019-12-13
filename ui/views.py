@@ -456,6 +456,22 @@ def delete_reference(request):
 
 
 @login_required
+def delete_sample(request, f):
+    if request.method == 'GET':
+        try:
+            sample = Sample.objects.get(file_path=f, user_id=request.user.id)
+            if sample.check_owner(request.user.id) or request.user.is_superuser:
+                sample.delete()
+                return success('Your step has been deleted.')
+            else:
+                return error('You are not owner of the step.')
+        except Exception as e:
+            return error(e)
+    else:
+        return error('Method error.')
+
+
+@login_required
 def delete_step(request):
     if request.method == 'GET':
         if 'id' in request.GET:
@@ -1280,7 +1296,7 @@ def query_job_parameter(request):
             reference_list = References.objects.filter(user_id=request.user.id).all()
             pre_defined_keys.extend([reference.name for reference in reference_list])
             steps = Protocol.objects.filter(parent=protocol.id)
-            wildcard_pattern = re.compile("\\{(.*?)\\}", re.IGNORECASE | re.DOTALL)
+            wildcard_pattern = re.compile("\\{\\{(.*?)\\}\\}", re.IGNORECASE | re.DOTALL)
             for step in steps:
                 for wildcard in re.findall(wildcard_pattern, step.parameter):
                     wildcard = wildcard.split(':')[0]

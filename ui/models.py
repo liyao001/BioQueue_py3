@@ -302,3 +302,9 @@ class Sample(models.Model):
 
     def __str__(self):
         return self.name
+
+    def check_owner(self, user):
+        if int(self.user_id) == user:
+            return 1
+        else:
+            return 0

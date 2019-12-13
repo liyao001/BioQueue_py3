@@ -150,11 +150,10 @@
 
         function delFile(obj) {
             var self = $(obj);
-            $.get("/ui/delete-upload-file/" + self.attr("data-path"), function (data) {
+            $.get("/ui/delete-sample/" + self.attr("data-path"), function (data) {
                 if (data.status) {
                     self.parent().parent().hide('fast');
-                }
-                ;
+                };
             });
         };
 

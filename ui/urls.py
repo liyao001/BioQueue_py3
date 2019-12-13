@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^delete-protocol/$', views.delete_protocol, name='delete_protocol'),
     url(r'^delete-reference', views.delete_reference, name='delete_reference'),
     url(r'^delete-upload-file/(?P<f>[a-z,A-Z,0-9,/,+,=]*)/$', views.delete_upload_file, name='delete_upload_file'),
+    url(r'^delete-sample/(?P<f>[a-z,A-Z,0-9,/,+,=]*)/$', views.delete_sample, name='delete_sample'),
     url(r'^delete-step/$', views.delete_step, name='delete_step'),
     url(r'^delete-ve/$', views.delete_ve, name='delete_ve'),
     url(r'^download-file/(?P<f>[a-z,A-Z,0-9,/,+,=]*)/$', views.download_file, name='download_file'),
